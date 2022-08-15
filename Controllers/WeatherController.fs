@@ -15,19 +15,18 @@ open MyAPI.Hubs.MyHub
 // https://stackoverflow.com/questions/46904678/call-signalr-core-hub-method-from-controller
 [<ApiController>]
 [<Route("[controller]")>]
-type SendController(hubCtx: IHubContext<MyHub>,logger : ILogger<SendController>) =
+type SendController(hubCtx: IHubContext<MyHub>, logger: ILogger<SendController>) =
     inherit ControllerBase()
-    
+
     member this.Get() =
         let user = "Server"
         let message = "Hello from the controller"
         // https://docs.microsoft.com/en-us/aspnet/core/signalr/hubcontext?view=aspnetcore-6.0
-        hubCtx.Clients |> sendMsg user message None |> ignore
+        hubCtx.Clients.All
+        |> sendMsgTo user message
+        |> ignore
         // https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/anonymous-records
-        {|
-            User=user
-            Message=message
-        |}
+        {| User = user; Message = message |}
 
 // the most weired thing is the convention
 // change the name of type/class to <Whatever Name>Controller
@@ -37,29 +36,26 @@ type SendController(hubCtx: IHubContext<MyHub>,logger : ILogger<SendController>)
 // [<Route("/abc")>]
 [<ApiController>]
 [<Route("[controller]")>]
-type WeatherController (logger : ILogger<WeatherController>) =
+type WeatherController(logger: ILogger<WeatherController>) =
     inherit ControllerBase()
 
     let summaries =
-        [|
-            "Freezing"
-            "Bracing"
-            "Chilly"
-            "Cool"
-            "Mild"
-            "Warm"
-            "Balmy"
-            "Hot"
-            "Sweltering"
-            "Scorching"
-        |]
+        [| "Freezing"
+           "Bracing"
+           "Chilly"
+           "Cool"
+           "Mild"
+           "Warm"
+           "Balmy"
+           "Hot"
+           "Sweltering"
+           "Scorching" |]
 
     [<HttpGet>]
     member _.Get() =
         let rng = System.Random()
-        [|
-            for index in 0..5 ->
-                { Date = DateTime.Now.AddDays(float index)
-                  TemperatureC = rng.Next(-20,55)
-                  Summary = summaries.[rng.Next(summaries.Length)] }
-        |]
+
+        [| for index in 0..5 ->
+               { Date = DateTime.Now.AddDays(float index)
+                 TemperatureC = rng.Next(-20, 55)
+                 Summary = summaries.[rng.Next(summaries.Length)] } |]

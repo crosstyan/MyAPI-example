@@ -1,5 +1,7 @@
 namespace MyAPI
+
 #nowarn "20"
+
 open System
 open System.Collections.Generic
 open System.IO
@@ -26,23 +28,23 @@ module Program =
     [<EntryPoint>]
     let main args =
 
-        let builder = WebApplication.CreateBuilder(args)
+        let builder =
+            WebApplication.CreateBuilder(args)
 
         builder.Services.AddControllers()
         builder.Services.AddSignalR()
         // https://stackoverflow.com/questions/31942037/how-to-enable-cors-in-asp-net-core
-        builder.Services.AddCors(
-            fun action -> action.AddPolicy(
+        builder.Services.AddCors (fun action ->
+            action.AddPolicy(
                 "AllowAll",
-                fun builder -> builder
-                                   // .WithOrigins("http://localhost:5173")
-                                   // named parameters is "="
-                                   // .SetIsOriginAllowed(isOriginAllowed=konst(true))
-                                   .SetIsOriginAllowed(konst(true)) // allow all origins
-                                   .AllowAnyMethod()
-                                   .AllowAnyHeader()
-                                   .AllowCredentials()
-                               |> ignore)) // return unit (void) (Action is a function that return null)
+                fun builder ->
+                    builder
+                        .SetIsOriginAllowed(konst (true)) // allow all origins
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials()
+                    |> ignore
+            )) // return unit (void) (Action is a function that return null)
 
         let app = builder.Build()
 
@@ -53,6 +55,5 @@ module Program =
         app.MapHub<MyHub>("/signal")
 
         app.Run()
-        
-        exitCode
 
+        exitCode
