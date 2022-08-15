@@ -3,19 +3,23 @@ module MyAPI.Hubs.MyHub
 open FSharpPlus
 open Microsoft.AspNetCore.SignalR
 
+let sendMsgTo (user: string) (msg:string) (clients: IClientProxy)  =
+    clients.SendAsync("ReceiveMessage", user, msg)
+
 let sendMsg<'T when 'T :> IClientProxy>
-    (clients: IHubClients<'T>)
-    (exclude: Option<List<string>>)
     (user: string)
     (message: string)
+    (exclude: Option<List<string>>)
+    (clients: IHubClients<'T>)
     =
     let c =
         match exclude with
         | Some (ex) -> clients.AllExcept(ex)
         | None -> clients.All
 
-    c.SendAsync("ReceiveMessage", user, message)
+    c |> sendMsgTo user message
     |> Async.AwaitTask
+
 
 // https://docs.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-6.0
 // https://stackoverflow.com/questions/34380571/combining-signalr-2-with-database
@@ -32,15 +36,16 @@ type MyHub() =
         // to handle messages in the client (JavaScript side).
         // I can really use some macro shit
         // Send to all clients except the sender.
-        sendMsg this.Clients (Some [this.Context.ConnectionId]) user message
+        this.Clients.Caller |> sendMsgTo "Server" $"You said: {message}" |> ignore
+        this.Clients |> sendMsg user message (Some [this.Context.ConnectionId]) 
 
     // https://github.com/dotnet/fsharp/issues/12448
     // https://www.compositional-it.com/news-blog/task-vs-async/
     // member this.BaseOnConnectedAsync() = base.OnConnectedAsync()
 
     override this.OnConnectedAsync() =
-        this.Groups.AddToGroupAsync(this.Context.ConnectionId, "TestGroup")
-        |> Async.AwaitTask
+        this.Clients.Caller |> sendMsgTo "Server" $"Welcome to the chat! {this.Context.ConnectionId}" |> ignore
+        this.Clients.All |> sendMsgTo "Server" $"{this.Context.ConnectionId} joined the chat."
         |> ignore
 
         base.OnConnectedAsync()

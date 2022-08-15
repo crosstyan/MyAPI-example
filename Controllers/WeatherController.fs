@@ -22,7 +22,7 @@ type SendController(hubCtx: IHubContext<MyHub>,logger : ILogger<SendController>)
         let user = "Server"
         let message = "Hello from the controller"
         // https://docs.microsoft.com/en-us/aspnet/core/signalr/hubcontext?view=aspnetcore-6.0
-        sendMsg hubCtx.Clients None user message |> ignore
+        hubCtx.Clients |> sendMsg user message None |> ignore
         // https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/anonymous-records
         {|
             User=user
